@@ -1,0 +1,44 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    image: momo-backend:local
+    container_name: momo-backend
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8081/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - momo-network
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VUE_APP_API_URL: http://localhost:8081
+        VUE_APP_PUBLIC_PATH: /
+    image: momo-frontend:local
+    container_name: momo-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "80:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8080/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - momo-network
+
+networks:
+  momo-network:
+    driver: bridge
